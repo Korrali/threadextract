@@ -1,0 +1,103 @@
+name: Deploy ThreadExtract Prod
+
+# Manual trigger only — promote after UAT validation.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DEPLOY-PROD to confirm'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-threadextract-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Belt and braces: the input is also checked in a step below, because a
+    # job-level `if` that evaluates false reports as skipped-but-successful,
+    # which reads as a green deploy that never happened.
+    if: github.event.inputs.confirm == 'DEPLOY-PROD'
+    steps:
+      - name: Verify confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "DEPLOY-PROD" ]; then
+            echo "Confirmation string did not match. Aborting."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync code to Prod directory on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh "ec2-user@${EC2_HOST}" 'mkdir -p /home/ec2-user/threadextract/prod'
+          # .env is excluded deliberately — it's a symlink on the host into
+          # /home/ec2-user/threadextract/.env.production, which lives outside
+          # the repo and holds the real secrets.
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.env*' \
+            --exclude 'playwright-report' \
+            --exclude 'test-results' \
+            ./ "ec2-user@${EC2_HOST}:/home/ec2-user/threadextract/prod/"
+
+      - name: Install, push schema, build, restart (Prod)
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh "ec2-user@${EC2_HOST}" bash <<'REMOTE_EOF'
+            set -euo pipefail
+            source ~/.nvm/nvm.sh
+            nvm use default
+
+            cd /home/ec2-user/threadextract/prod
+
+            # Re-point the env symlink; rsync --delete removes it each run.
+            ln -sf /home/ec2-user/threadextract/.env.production .env
+
+            pnpm install --frozen-lockfile
+            pnpm exec prisma generate
+
+            # This project has no migrations directory — schema is applied
+            # with db push. Deliberately WITHOUT --accept-data-loss: against
+            # production, a schema change that would drop data must fail the
+            # deploy rather than silently destroy it.
+            pnpm exec prisma db push
+
+            pnpm build
+
+            # Start from the ThreadExtract-specific ecosystem file only, and
+            # --only its own process, so pm2's dump cache can't bleed env
+            # between products sharing this host.
+            pm2 delete threadextract-web-prod 2>/dev/null || true
+            pm2 start /home/ec2-user/threadextract/prod/infra/ecosystem.threadextract.config.js \
+              --only threadextract-web-prod --update-env
+            pm2 save
+          REMOTE_EOF
+
+      - name: Smoke check (PM2 + HTTP)
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh "ec2-user@${EC2_HOST}" "pm2 list | grep threadextract-web-prod | grep -q online" \
+            || (echo "Prod deploy: threadextract-web-prod NOT ONLINE" && exit 1)
+          curl -fsS --retry 5 --retry-delay 3 -o /dev/null -w "%{http_code}\n" \
+            https://threadextract.korrali.com/ \
+            || (echo "Prod deploy: site not responding" && exit 1)
+          echo "Prod deploy: threadextract-web-prod ONLINE and serving"

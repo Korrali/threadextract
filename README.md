@@ -76,4 +76,13 @@ If you edit `.env.test`, the `TOKEN_ENCRYPTION_KEY`/`CLAIM_TOKEN_SECRET`/`NEXTAU
 
 ## Deploying
 
-Deploys are manual, via `/Users/ashishbhagat/products/deploy_threadextract_{prod,uat}.sh` on the host machine — they rsync the repo to an EC2 box, run `pnpm install && prisma generate && prisma db push && pnpm build`, and reload PM2 (`infra/ecosystem.threadextract.config.js`). Both environments read secrets from `.env.production` / `.env.uat` on the EC2 host, not from this repo — any new env var added here must also be added there before deploying.
+Deploys run in GitHub Actions, matching the trust and revenue repos:
+
+- **UAT** — `.github/workflows/deploy-uat.yml`. Runs automatically on every push to `main` that touches app code, after typecheck, unit tests and a build all pass.
+- **Prod** — `.github/workflows/deploy-prod.yml`. Manual only: run the workflow and type `DEPLOY-PROD` to confirm. Promote after eyeballing UAT.
+
+Both rsync the repo to the EC2 box, then run `pnpm install && prisma generate && prisma db push && pnpm build` and reload PM2 (`infra/ecosystem.threadextract.config.js`). `prisma db push` runs *without* `--accept-data-loss`, so a schema change that would drop data fails the deploy instead of destroying it.
+
+Both environments read secrets from `.env.production` / `.env.uat` on the EC2 host, symlinked in as `.env` by the deploy — they are not in this repo, so any new env var added here must also be added there before deploying.
+
+The workflows need three repo secrets: `EC2_HOST`, `EC2_SSH_KEY` and (for the rsync target) an `ec2-user` login. Set them under Settings → Secrets and variables → Actions.

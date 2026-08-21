@@ -1,0 +1,144 @@
+name: Deploy ThreadExtract UAT
+
+# Auto-deploys on every push to main. Prod is a separate, manually gated
+# workflow (deploy-prod.yml) — promote only after eyeballing UAT.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'prisma/**'
+      - 'public/**'
+      - 'infra/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'next.config.*'
+      - '.github/workflows/deploy-uat.yml'
+
+concurrency:
+  group: deploy-threadextract-uat
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm test
+
+      - name: Verify build
+        run: pnpm build
+        env:
+          # Dummy-but-shape-valid values so build-time module evaluation
+          # (fail-fast checks in crypto.ts / claim-token.ts, Stripe/NextAuth
+          # client construction) doesn't crash the build. Mirrors ci.yml —
+          # none of these are real credentials and nothing here touches a
+          # real database.
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db
+          SLACK_CLIENT_ID: dummy
+          SLACK_CLIENT_SECRET: dummy
+          SLACK_SIGNING_SECRET: dummy
+          GEMINI_API_KEYS: dummy
+          GROQ_API_KEYS: dummy
+          NEXT_PUBLIC_BASE_URL: http://localhost:3000
+          TOKEN_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          CLAIM_TOKEN_SECRET: dummy-secret-at-least-32-chars-long-for-ci
+          NEXTAUTH_SECRET: dummy-secret-at-least-32-chars-long-for-ci
+          NEXTAUTH_URL: http://localhost:3000
+          GOOGLE_CLIENT_ID: dummy
+          GOOGLE_CLIENT_SECRET: dummy
+          RESEND_API_KEY: dummy
+          EMAIL_FROM: "ThreadExtract <hello@korrali.com>"
+          STRIPE_SECRET_KEY: sk_test_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_dummy
+          STRIPE_PRICE_PRO_MONTHLY: price_dummy
+          STRIPE_PRICE_PRO_ANNUAL: price_dummy
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync code to UAT directory on EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh "ec2-user@${EC2_HOST}" 'mkdir -p /home/ec2-user/threadextract/uat'
+          # .env is excluded deliberately — it's a symlink on the host into
+          # /home/ec2-user/threadextract/.env.uat, which lives outside the
+          # repo and holds the real secrets.
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.env*' \
+            --exclude 'playwright-report' \
+            --exclude 'test-results' \
+            ./ "ec2-user@${EC2_HOST}:/home/ec2-user/threadextract/uat/"
+
+      - name: Install, push schema, build, restart (UAT)
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh "ec2-user@${EC2_HOST}" bash <<'REMOTE_EOF'
+            set -euo pipefail
+            source ~/.nvm/nvm.sh
+            nvm use default
+
+            cd /home/ec2-user/threadextract/uat
+
+            # Re-point the env symlink; rsync --delete removes it each run.
+            ln -sf /home/ec2-user/threadextract/.env.uat .env
+
+            pnpm install --frozen-lockfile
+            pnpm exec prisma generate
+
+            # This project has no migrations directory — schema is applied
+            # with db push. Deliberately WITHOUT --accept-data-loss: if a
+            # schema change would drop data, this should fail the deploy
+            # rather than silently destroy it.
+            pnpm exec prisma db push
+
+            pnpm build
+
+            # Start from the ThreadExtract-specific ecosystem file only, and
+            # --only its own process, so pm2's dump cache can't bleed env
+            # between products sharing this host.
+            pm2 delete threadextract-web-uat 2>/dev/null || true
+            pm2 start /home/ec2-user/threadextract/uat/infra/ecosystem.threadextract.config.js \
+              --only threadextract-web-uat --update-env
+            pm2 save
+          REMOTE_EOF
+
+      - name: Smoke check (PM2 status)
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          ssh "ec2-user@${EC2_HOST}" "pm2 list | grep threadextract-web-uat | grep -q online" \
+            && echo "UAT deploy: threadextract-web-uat ONLINE" \
+            || (echo "UAT deploy: threadextract-web-uat NOT ONLINE" && exit 1)
