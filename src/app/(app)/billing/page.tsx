@@ -71,7 +71,7 @@ export default async function BillingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-[#10b981]/40">
+            <Card className="border-[#0559C7]/40">
               <CardHeader>
                 <CardTitle>{PRO_PLAN.label}</CardTitle>
                 <CardDescription>{PRO_PLAN.tagline}</CardDescription>
@@ -89,8 +89,8 @@ export default async function BillingPage() {
                 {workspace ? (
                   stripeConfigured ? (
                     <div className="space-y-2">
-                      <StripeCheckoutButton interval="monthly" className="bg-gradient-to-r from-[#10b981] to-[#3b82f6] hover:opacity-90 border-0 text-white">Buy Pro</StripeCheckoutButton>
-                      <StripeCheckoutButton interval="annual" className="bg-gradient-to-r from-[#10b981] to-[#3b82f6] hover:opacity-90 border-0 text-white">
+                      <StripeCheckoutButton interval="monthly" className="bg-gradient-to-r from-[#0559C7] to-[#0D8C4D] hover:opacity-90 border-0 text-white">Buy Pro</StripeCheckoutButton>
+                      <StripeCheckoutButton interval="annual" className="bg-gradient-to-r from-[#0559C7] to-[#0D8C4D] hover:opacity-90 border-0 text-white">
                         Buy Pro (Annual - {PRO_PLAN.annualPerMonth})
                       </StripeCheckoutButton>
                     </div>
@@ -106,7 +106,7 @@ export default async function BillingPage() {
                   <div className="space-y-2">
                     <a
                       href={SLACK_OAUTH_URL}
-                      className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-[#10b981] to-[#3b82f6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 w-full"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 w-full"
                     >
                       Connect to Slack
                     </a>

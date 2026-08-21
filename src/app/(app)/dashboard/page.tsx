@@ -44,7 +44,7 @@ export default async function DashboardPage() {
           <CardContent className="flex justify-center pb-8">
             <Link
               href={buildSlackOAuthUrl()}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#10b981] to-[#3b82f6] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5"
             >
               Connect to Slack
             </Link>

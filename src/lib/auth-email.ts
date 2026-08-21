@@ -79,7 +79,7 @@ export function buildSignInEmail(opts: EmailBrand & { url: string }): {
               <td style="padding:8px 32px 8px 32px;">
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="border-radius:8px;background:#10b981;">
+                    <td style="border-radius:8px;background:#0559C7;">
                       <a href="${safeUrl}" target="_blank"
                          style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
                         Sign in
@@ -95,7 +95,7 @@ export function buildSignInEmail(opts: EmailBrand & { url: string }): {
                   Or paste this link into your browser:
                 </p>
                 <p style="margin:0 0 16px 0;font-size:13px;line-height:1.5;word-break:break-all;">
-                  <a href="${safeUrl}" target="_blank" style="color:#10b981;">${safeUrl}</a>
+                  <a href="${safeUrl}" target="_blank" style="color:#0559C7;">${safeUrl}</a>
                 </p>
                 <p style="margin:0 0 24px 0;font-size:13px;line-height:1.5;color:#6b7280;">
                   If you didn't request this, you can safely ignore this email — your account

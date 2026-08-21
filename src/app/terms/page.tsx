@@ -10,7 +10,7 @@ export default function TermsPage() {
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 h-16">
           <Link href="/" className="flex items-center gap-2.5 font-semibold">
-            <span className="inline-grid h-8 w-8 place-items-center rounded-md bg-gradient-to-b from-[#10b981] to-[#3b82f6] text-sm font-bold text-white">K</span>
+            <span className="inline-grid h-8 w-8 place-items-center rounded-md bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] text-sm font-bold text-white">K</span>
             <span className="text-base">Korrali ThreadExtract</span>
           </Link>
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

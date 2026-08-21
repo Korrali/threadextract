@@ -75,7 +75,7 @@ export function DemoAnimation() {
       >
         <div className="h-14 border-b flex items-center px-6 justify-between shrink-0">
           <div className="flex items-center gap-2 font-bold text-slate-800">
-            <span className="w-6 h-6 rounded bg-gradient-to-br from-[#10b981] to-[#3b82f6] text-white flex items-center justify-center text-xs">K</span>
+            <span className="w-6 h-6 rounded bg-gradient-to-br from-[#0559C7] to-[#0D8C4D] text-white flex items-center justify-center text-xs">K</span>
             ThreadExtract
           </div>
           <div className="flex items-center gap-6 text-sm text-slate-600">
@@ -92,7 +92,7 @@ export function DemoAnimation() {
              </div>
              <h2 className="text-xl font-bold mb-3">No workspace connected</h2>
              <p className="text-slate-500 mb-8 text-sm leading-relaxed">Install ThreadExtract in your Slack workspace to start turning threads into Notion docs.</p>
-             <button className="bg-[#10b981] hover:bg-[#0ea5e9] bg-gradient-to-r from-[#10b981] to-[#3b82f6] text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all text-sm">
+             <button className="bg-[#0559C7] hover:bg-[#0ea5e9] bg-gradient-to-r from-[#0559C7] to-[#0D8C4D] text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all text-sm">
                Connect to Slack
              </button>
            </div>
@@ -115,7 +115,7 @@ export function DemoAnimation() {
         </div>
         <div className="flex-1 flex p-12 max-w-4xl mx-auto w-full gap-16 items-start">
            <div className="flex-1 flex flex-col items-center text-center pt-8">
-             <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#3b82f6] rounded-xl flex items-center justify-center text-white text-3xl font-bold mb-6 shadow-md border-4 border-white">
+             <div className="w-16 h-16 bg-gradient-to-br from-[#0559C7] to-[#0D8C4D] rounded-xl flex items-center justify-center text-white text-3xl font-bold mb-6 shadow-md border-4 border-white">
                K
              </div>
              <h1 className="text-2xl font-bold mb-2">Allow the &quot;ThreadExtract&quot; app to access Slack</h1>
@@ -163,7 +163,7 @@ export function DemoAnimation() {
       >
         <div className="h-14 border-b flex items-center px-6 justify-between shrink-0 bg-white">
           <div className="flex items-center gap-2 font-bold text-slate-800">
-            <span className="w-6 h-6 rounded bg-gradient-to-br from-[#10b981] to-[#3b82f6] text-white flex items-center justify-center text-xs">K</span>
+            <span className="w-6 h-6 rounded bg-gradient-to-br from-[#0559C7] to-[#0D8C4D] text-white flex items-center justify-center text-xs">K</span>
             ThreadExtract
           </div>
           <div className="flex items-center gap-6 text-sm text-slate-600">
@@ -431,7 +431,7 @@ export function DemoAnimation() {
                    initial={{ opacity: 0, y: 10 }}
                    animate={{ opacity: 1, y: 0 }}
                  >
-                   <div className="w-10 h-10 rounded bg-gradient-to-br from-[#10b981] to-[#3b82f6] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">TE</div>
+                   <div className="w-10 h-10 rounded bg-gradient-to-br from-[#0559C7] to-[#0D8C4D] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">TE</div>
                    <div>
                      <div className="flex items-baseline gap-2">
                        <span className="font-bold text-slate-900">ThreadExtract</span>
@@ -439,7 +439,7 @@ export function DemoAnimation() {
                        <span className="text-xs text-slate-500">Just now</span>
                      </div>
                      <p className="text-slate-800 text-sm mt-0.5 leading-relaxed">
-                       ✅ <span className="font-semibold text-[#10b981]">Thread extracted successfully!</span> View in Notion.
+                       ✅ <span className="font-semibold text-[#0559C7]">Thread extracted successfully!</span> View in Notion.
                      </p>
                    </div>
                  </motion.div>

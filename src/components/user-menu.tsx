@@ -23,7 +23,7 @@ export function UserMenu({ email, signOutAction }: { email: string; signOutActio
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-[#10b981] to-[#3b82f6] text-sm font-bold text-white shadow-sm ring-1 ring-black/5 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:ring-offset-2"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] text-sm font-bold text-white shadow-sm ring-1 ring-black/5 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#0D8C4D] focus:ring-offset-2"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
