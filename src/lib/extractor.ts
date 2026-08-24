@@ -47,7 +47,7 @@ export function isValidAiExtractionResult(value: unknown): value is AiExtraction
   );
 }
 
-function buildExtractionPrompt(rawTranscript: string): string {
+export function buildExtractionPrompt(rawTranscript: string): string {
   return `
       You are an expert technical documentation assistant. You will be provided with a raw, noisy Slack thread.
       Your job is to extract the core knowledge from this thread. Ignore all pleasantries, memes, side-conversations, and dead ends.
@@ -68,7 +68,7 @@ function buildExtractionPrompt(rawTranscript: string): string {
 }
 
 // Reusable generation logic with fallback strategy
-async function generateContentWithFallback(prompt: string): Promise<string | null> {
+export async function generateContentWithFallback(prompt: string): Promise<string | null> {
   // 1. Try Gemini Keys first
   for (const key of geminiKeys) {
     try {
@@ -179,6 +179,30 @@ export async function extractAndPublish(opts: {
   });
 
   return { title: aiData.title, notionPageUrl, notionPageId: page.id };
+}
+
+/**
+ * The AI-only half of the pipeline — no Notion push, no DB write. Backs the
+ * public "Slack Thread to Markdown" free tool, so visitors get the same
+ * extraction quality the paid product uses without needing a Slack/Notion
+ * connection.
+ */
+export async function extractMarkdownOnly(rawTranscript: string): Promise<AiExtractionResult | null> {
+  const prompt = buildExtractionPrompt(redactSecrets(rawTranscript));
+
+  const responseText = await generateContentWithFallback(prompt);
+  if (!responseText) return null;
+
+  let aiData: unknown;
+  try {
+    const cleanedJson = responseText.replace(/```json\n?|```/g, "").trim();
+    aiData = JSON.parse(cleanedJson);
+  } catch {
+    return null;
+  }
+
+  if (!isValidAiExtractionResult(aiData)) return null;
+  return aiData;
 }
 
 export async function processSlackThread(

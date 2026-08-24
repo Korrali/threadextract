@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Bot, Database, Zap } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { DemoAnimation } from "@/components/demo-animation";
+import { PublicHeader } from "@/components/public-header";
+import { PublicFooter } from "@/components/public-footer";
 import { FREE_PLAN, PRO_PLAN } from "@/lib/pricing";
 
 // This page embeds a short-lived signed OAuth state token in the "Add to
@@ -18,23 +20,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-blue-100">
-      {/* Navigation */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50 shadow-sm shadow-black/[0.03]">
-        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-6 h-16">
-          <Link href="/" className="flex items-center gap-2.5 font-semibold">
-            <span className="inline-grid h-8 w-8 place-items-center rounded-md bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] text-sm font-bold text-white">K</span>
-            <span className="text-base">Korrali ThreadExtract</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/contact" className="hidden sm:inline-flex rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted">
-              Contact us
-            </Link>
-            <Link href="/login" className="rounded-lg bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90">
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Hero & Features Section */}
       <section className="relative border-b border-border/40 bg-gradient-to-b from-transparent to-muted/10 overflow-hidden">
@@ -145,24 +131,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card">
-        <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2.5">
-            <span className="inline-grid h-7 w-7 place-items-center rounded-md bg-gradient-to-b from-[#0559C7] to-[#0D8C4D] text-xs font-bold text-white shadow-sm">K</span>
-            <span className="font-semibold text-foreground">Korrali ThreadExtract</span>
-            <span className="text-xs">· part of <a href="https://korrali.com" className="hover:text-foreground transition-colors">Korrali</a></span>
-          </div>
-          <div className="flex flex-wrap gap-4 text-xs">
-            <a href="https://trust.korrali.com" className="hover:text-foreground transition-colors">Korrali Trust</a>
-            <a href="https://revenue.korrali.com" className="hover:text-foreground transition-colors">Korrali Revenue</a>
-            <a href="https://data.korrali.com" className="hover:text-foreground transition-colors">Korrali Data</a>
-            <a href="https://web.korrali.com" className="hover:text-foreground transition-colors">Korrali Web</a>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms &amp; Conditions</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }
