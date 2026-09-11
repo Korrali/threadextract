@@ -32,7 +32,7 @@ export default async function BillingPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Current plan: {tier === "TRIAL" ? "Free" : tier === "PRO" ? "Pro" : "Free"}</CardTitle>
+            <CardTitle>Current plan: {tier === "TRIAL" ? "Trial" : tier === "PRO" ? "Pro" : "Free"}</CardTitle>
             <CardDescription>
               {tier === "TRIAL" &&
                 `You're on a free trial with unlimited extractions. ${trial.daysRemaining} day${
