@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { createUser, createWorkspace, createExtraction, cleanup, prisma } from "./helpers/db";
 import { loginAs } from "./helpers/auth";
+// Read pricing from the source of truth rather than hardcoding it — these
+// assertions previously said "of 5" and "$29/mo" and silently went stale when
+// the free cap moved to 10 and Pro to $49.
+import { FREE_TIER_MONTHLY_CAP, PRO_PLAN } from "../src/lib/pricing";
 
 const STRIPE_CONFIGURED = Boolean(process.env.STRIPE_PRICE_PRO_MONTHLY);
 
@@ -16,10 +20,12 @@ test.describe("Billing page", () => {
       await page.goto("/billing");
 
       await expect(page.getByText(/current plan: free/i)).toBeVisible();
-      await expect(page.getByText(/used 2 of 5 free extractions/i)).toBeVisible();
+      await expect(
+        page.getByText(new RegExp(`used 2 of ${FREE_TIER_MONTHLY_CAP} free extractions`, "i")),
+      ).toBeVisible();
       await expect(page.getByText("Free", { exact: true })).toBeVisible();
       await expect(page.getByText("Pro", { exact: true })).toBeVisible();
-      await expect(page.getByText("$29/mo")).toBeVisible();
+      await expect(page.getByText(PRO_PLAN.monthlyPrice)).toBeVisible();
     } finally {
       await cleanup({ userId: user.id, workspaceId: workspace.id });
     }
@@ -60,7 +66,7 @@ test.describe("Billing page", () => {
 
       await expect(page.getByText(/current plan: pro/i)).toBeVisible();
       await expect(page.getByRole("button", { name: /manage billing/i })).toBeVisible();
-      await expect(page.getByText("$29/mo")).not.toBeVisible();
+      await expect(page.getByText(PRO_PLAN.monthlyPrice)).not.toBeVisible();
     } finally {
       await cleanup({ userId: user.id, workspaceId: workspace.id });
     }

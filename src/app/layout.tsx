@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Bricolage_Grotesque, Instrument_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -36,7 +37,17 @@ export default function RootLayout({
       lang="en"
       className={`${instrumentSans.variable} ${bricolage.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* Cloudflare Web Analytics — cookieless page-load counts, aggregated on
+            korrali.com/visitors.html. The token is a public site identifier, not
+            a secret; UAT hits are excluded by hostname when the stats are read. */}
+        <Script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token":"ec89fdaeed684addb6a98bd5e63fd012"}'
+        />
+      </body>
     </html>
   );
 }
