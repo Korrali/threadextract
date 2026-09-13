@@ -74,7 +74,9 @@ export async function generateContentWithFallback(prompt: string): Promise<strin
     try {
       console.log("Attempting generation with Gemini...");
       const genAI = new GoogleGenerativeAI(key);
-      const modelName = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+      // gemini-1.5-flash and gemini-2.0-flash are both retired server-side
+      // (confirmed via a live API call returning 404 on 2026-09-13).
+      const modelName = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await withTimeout(model.generateContent(prompt), GEMINI_TIMEOUT_MS, "Gemini");
       return result.response.text();
@@ -92,7 +94,7 @@ export async function generateContentWithFallback(prompt: string): Promise<strin
       const completion = await withTimeout(
         groq.chat.completions.create({
           messages: [{ role: "user", content: prompt }],
-          model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+          model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
         }),
         GROQ_TIMEOUT_MS,
         "Groq",
@@ -105,7 +107,62 @@ export async function generateContentWithFallback(prompt: string): Promise<strin
   }
 
   console.error("All AI generation strategies and keys failed.");
+  void notifyModelFailure("extractor", `${geminiKeys.length} Gemini key(s) and ${groqKeys.length} Groq key(s) all failed`);
   return null;
+}
+
+// Fire-and-forget Telegram + email alert when every provider/key in the
+// chain above fails — previously this was a console.error only, easy to miss
+// since a failed extraction here also just posts a Slack error reply and
+// moves on (see the caller). Debounced to 1 per 15 min so a bad key rotation
+// doesn't spam.
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const ALERT_EMAIL = process.env.MODEL_ALERT_EMAIL ?? "ashish.bhagat@korrali.com";
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const FROM_EMAIL = process.env.EMAIL_FROM ?? "ThreadExtraction <hello@korrali.com>";
+let lastAlertAt = 0;
+const ALERT_DEBOUNCE_MS = 15 * 60 * 1000;
+
+async function notifyModelFailure(row: string, detail: string): Promise<void> {
+  const now = Date.now();
+  if (now - lastAlertAt < ALERT_DEBOUNCE_MS) return;
+  lastAlertAt = now;
+
+  const env = process.env.APP_ENV ?? (process.env.NODE_ENV === "production" ? "prod" : "uat");
+  const message = `🔴 Model chain exhausted — threadextract/${env}\nRow: ${row}\n\n${detail}`;
+
+  await Promise.allSettled([
+    (async () => {
+      if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+      try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message }),
+        });
+      } catch (e) {
+        console.error("notifyModelFailure: telegram failed", e);
+      }
+    })(),
+    (async () => {
+      if (!RESEND_API_KEY) return;
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: FROM_EMAIL,
+            to: [ALERT_EMAIL],
+            subject: `Model chain exhausted — threadextract/${env}/${row}`,
+            text: message,
+          }),
+        });
+      } catch (e) {
+        console.error("notifyModelFailure: resend failed", e);
+      }
+    })(),
+  ]);
 }
 
 export interface ExtractAndPublishResult {
